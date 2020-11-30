@@ -1,0 +1,114 @@
+﻿#pragma max_recursion_depth 17
+
+#include "./Common.hlsl"
+#include "./PRNG.hlsl"
+#include "./RTSky.hlsl"
+
+#define MAX_DEPTH (6)
+#define NUM_OF_SAMPLES (1)
+
+inline void GenerateCameraRay(out float3 origin, out float3 direction)
+{
+  float2 xy = DispatchRaysIndex().xy + 0.5f; // center in the middle of the pixel.
+  float2 screenPos = xy / DispatchRaysDimensions().xy * 2.0f - 1.0f;//Range (-1,1)
+
+  // Un project the pixel coordinate into a ray.
+  float4 world = mul(_InvCameraViewProj, float4(screenPos, 0, 1));
+
+  world.xyz /= world.w;
+  origin = _WorldSpaceCameraPos.xyz;
+  direction = normalize(world.xyz - origin);
+}
+
+inline void GenerateCameraRayWithOffset(out float3 origin, out float3 direction, float2 offset)
+{
+  float2 xy = DispatchRaysIndex().xy + offset;
+  float2 screenPos = xy / DispatchRaysDimensions().xy * 2.0f - 1.0f;
+
+  // Un project the pixel coordinate into a ray.
+  float4 world = mul(_InvCameraViewProj, float4(screenPos, 0, 1));
+
+  world.xyz /= world.w;
+  origin = _WorldSpaceCameraPos.xyz;
+  direction = normalize(world.xyz - origin);
+}
+
+inline float3 Color(float3 origin, float3 direction)
+{
+  float t = 0.5f * (direction.y + 1.0f);
+  return (1.0f - t) * float3(1.0f, 1.0f, 1.0f) + t * float3(0.5f, 0.7f, 1.0f);
+}
+
+RWTexture2D<float4> _OutputTarget;
+//RWTexture2D<float4> History;
+//RWTexture2D<float4> Record;
+float4 _OutputTargetSize;
+int _FrameIndex;
+
+[shader("raygeneration")]
+void OutputColorRayGenShader()
+{
+  uint2 dispatchIdx = DispatchRaysIndex().xy;//像素坐标
+  uint2 dispatchDim = DispatchRaysDimensions().xy; //屏幕长宽
+
+  //Antialiasing-----------------------------------------------------------------------------------
+  const uint PRNGIndex = dispatchIdx.y * (int)DispatchRaysDimensions().x + dispatchIdx.x;
+  uint4 PRNGStates = _PRNGStates[PRNGIndex];
+  float4 finalColor = float4(0, 0, 0, 0);
+
+  float3 origin;
+  float3 direction;
+  //Antialiasing-----------------------------------------------------------------------------------
+
+  float2 apertureOffset = GetRandomInUnitDisk(PRNGStates);
+  float2 offset = float2(GetRandomValue(PRNGStates), GetRandomValue(PRNGStates));
+  GenerateFocusCameraRayWithOffset(origin, direction, apertureOffset, offset);
+
+  RayDesc rayDescriptor;
+  rayDescriptor.Origin = origin;
+  rayDescriptor.Direction = direction;
+  rayDescriptor.TMin = 1e-5f;
+  rayDescriptor.TMax = _CameraFarDistance;
+
+  RayIntersection rayIntersection;
+  rayIntersection.remainingDepth = MAX_DEPTH - 1;
+  rayIntersection.PRNGStates = PRNGStates;
+  rayIntersection.color = 0;//float4(1.0f,1.0f, 1.0f, 0.0f);
+
+  TraceRay(_AccelerationStructure, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0xFF, 0, 1, 0, rayDescriptor, rayIntersection);
+  
+   //AntialiasingBlendColor----------------------------------------------------------------------
+  PRNGStates = rayIntersection.PRNGStates;
+  finalColor += rayIntersection.color;
+  finalColor = float4(sqrt(finalColor.r), sqrt(finalColor.g), sqrt(finalColor.b), finalColor.a);
+  _PRNGStates[PRNGIndex] = PRNGStates;
+  if (_FrameIndex > 1)
+  {
+    float a = 1.0f / (float)_FrameIndex;
+    finalColor = _OutputTarget[dispatchIdx] * (1.0f - a) + finalColor * a;
+    /*
+     int count = min(old.w + 1, 1000);
+	if (old.w != 0 && _FrameIndex>1){
+		History[dispatchIdx] = float4((old.xyz * old.w + finalColor) / (old.w+1), count);
+		Record[dispatchIdx] = float4((rec.xyz * old.w + finalColor * finalColor) / (old.w+1), count);
+	}else{
+        finalColor.w=1;
+		History[dispatchIdx] = float4(finalColor);
+		Record[dispatchIdx] = float4(finalColor * finalColor);
+	}
+    */
+  }
+
+  _OutputTarget[dispatchIdx] = finalColor;
+  //AntialiasingBlendColor-----------------------------------------------------------------------
+  //_OutputTarget[dispatchIdx] = rayIntersection.color;//float4(Color(origin,direction),1);//float4((float)dispatchIdx.x / dispatchDim.x, (float)dispatchIdx.y / dispatchDim.y, 0.2f, 1.0f);
+
+}
+
+
+[shader("miss")]
+void MissShader(inout RayIntersection rayIntersection : SV_RayPayload)
+{
+   SkyLight(rayIntersection);
+}
+

@@ -1,0 +1,106 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &-7103099342154062235
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: eee3efd6c07326541a8caac63ab420b6, type: 3}
+  m_Name: NewRayTracingRenderFeature
+  m_EditorClassIdentifier: 
+  settings:
+    _shader: {fileID: 4807578003741378534, guid: 6374b7c4c6c641d4bb8e3b8172cfbce5,
+      type: 3}
+    mrenderPassEvent: 500
+    focusDistance: 0.67
+    aperture: 0
+    FinalBlitMat: {fileID: 2100000, guid: 5dd27b76793394f4ab30faf403217bbe, type: 2}
+    denoiseMat: {fileID: 2100000, guid: 8209c58b764473e498fc10d5b94e8ffb, type: 2}
+    DenoiseStrength: 0.3
+--- !u!114 &-6495976873374883940
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d73e6a3ac928d0d4daec3fb6670a00d6, type: 3}
+  m_Name: MDepthNormalFeature
+  m_EditorClassIdentifier: 
+--- !u!114 &-3659866689018993065
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 457c10befaef4cf49860d807085788f7, type: 3}
+  m_Name: NewSSGI
+  m_EditorClassIdentifier: 
+  settings:
+    renderPassEvent: 500
+    Material: {fileID: 2100000, guid: bae01e4c96084d547a2da5e38d76e3de, type: 2}
+    SamplesCount: 8
+    IndirectAmount: 8
+    NoiseAmount: 2
+    Noise: 1
+    Enabled: 1
+--- !u!114 &-3536046288840256747
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ebd29c2328617cf429012970f5e45c60, type: 3}
+  m_Name: NewPPSOutlineFeature
+  m_EditorClassIdentifier: 
+  settings:
+    outlineMaterial: {fileID: 2100000, guid: 33bdcf79eba4d9c43809ec70249f9841, type: 2}
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: de640fe3d0db1804a85f9fc8f5cadab6, type: 3}
+  m_Name: ForwardRenderer
+  m_EditorClassIdentifier: 
+  m_RendererFeatures:
+  - {fileID: -3536046288840256747}
+  - {fileID: -3659866689018993065}
+  - {fileID: -7103099342154062235}
+  postProcessData: {fileID: 11400000, guid: 41439944d30ece34e96484bdb6645b55, type: 2}
+  shaders:
+    blitPS: {fileID: 4800000, guid: c17132b1f77d20942aa75f8429c0f8bc, type: 3}
+    copyDepthPS: {fileID: 4800000, guid: d6dae50ee9e1bfa4db75f19f99355220, type: 3}
+    screenSpaceShadowPS: {fileID: 4800000, guid: 0f854b35a0cf61a429bd5dcfea30eddd,
+      type: 3}
+    samplingPS: {fileID: 4800000, guid: 04c410c9937594faa893a11dceb85f7e, type: 3}
+    fallbackErrorPS: {fileID: 4800000, guid: e6e9a19c3678ded42a3bc431ebef7dbd, type: 3}
+  m_OpaqueLayerMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_TransparentLayerMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_DefaultStencilState:
+    overrideStencilState: 0
+    stencilReference: 0
+    stencilCompareFunction: 8
+    passOperation: 0
+    failOperation: 0
+    zFailOperation: 0
